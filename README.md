@@ -39,7 +39,7 @@ There are two the principal axis branches.
     - Trriger (used cloud build trigger)
 
 
-## How to build and push slack image and deploy to Cloud Run
+## How to build, push slack image and deploy to Cloud Run
 
 ### Preparation
 Set `gcloud config`
@@ -61,11 +61,23 @@ Set `gcloud config`
 
 - If not set vds-amc-client configuration on local, execute following command.
   ```
-  % gcloud config configurations create ana-op  // create configuration
+  % gcloud config configurations create ana-op       // create configuration
   % gcloud config set compute/region asia-northeast1 // set regison
-  % gcloud config set compute/zone asia-northeast1-a
-  % gcloud config set core/account YOUR_EMAIL
-  % gcloud config set core/project vds-client-amc
+  % gcloud config set compute/zone asia-northeast1-a // set zone
+  % gcloud config set core/project vds-client-amc    // set project id
+  ```
+
+### How to build, push slack image and deploy to Cloud Build
+- A makefile exists 
+  ```
+  % cd [this project root]
+  % make all
+  ```
+
+- When get message on your terminal, it is successfully deployed to Cloud run.
+  ```
+  Service [slack-notifier] revision [slack-notifier-00070-lug] has been deployed and is serving 100 percent of traffic.
+  Service URL: https://slack-notifier-qtswhpgk2a-an.a.run.app
   ```
 
 
