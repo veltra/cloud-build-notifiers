@@ -13,8 +13,23 @@ func TestWriteMessage(t *testing.T) {
 	b := &cbpb.Build{
 		ProjectId: "my-project-id",
 		Id:        "some-build-id",
-		Status:    cbpb.Build_SUCCESS,
-		LogUrl:    "https://some.example.com/log/url?foo=bar",
+		Substitutions: map[string]string{
+			"BRANCH_NAME":               "test-deploy",
+			"COMMIT_SHA":                "commit-test-test",
+			"REF_NAME":                  "test-deploy",
+			"REPO_NAME":                 "test-repository",
+			"REVISION_ID":               "test-revison",
+			"SHORT_SHA":                 "test",
+			"TRIGGER_BUILD_CONFIG_PATH": "cloudbuild/cloudbuild.yaml",
+			"TRIGGER_NAME":              "triggername",
+			"_CLUSTER_NAME":             "sample-cluster",
+			"_ENV":                      "sample",
+			"_FRONT_DEPLOYMENT_YAML":    "sample.yaml",
+			"_REGION":                   "asia-northeast1",
+			"_ZONE":                     "asia-northeast1-a",
+		},
+		Status: cbpb.Build_SUCCESS,
+		LogUrl: "https://some.example.com/log/url?foo=bar",
 	}
 
 	got, err := n.writeMessage(b)
@@ -24,10 +39,15 @@ func TestWriteMessage(t *testing.T) {
 
 	want := &slack.WebhookMessage{
 		Attachments: []slack.Attachment{{
-			Text:  "Cloud Build (my-project-id, some-build-id): SUCCESS",
+			Text: `Successfully deployed to sample environment!! 
+			 - Environment : sample
+			 - Branch : test-deploy
+			 - Deployed Commit : commit-test-test
+			 - Cluster : sample-cluster
+			 - Trriger : triggername`,
 			Color: "good",
 			Actions: []slack.AttachmentAction{{
-				Text: "View Logs",
+				Text: "Open Build Details",
 				Type: "button",
 				URL:  "https://some.example.com/log/url?foo=bar&utm_campaign=google-cloud-build-notifiers&utm_medium=chat&utm_source=google-cloud-build",
 			}},

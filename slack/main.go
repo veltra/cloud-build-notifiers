@@ -79,12 +79,66 @@ func (s *slackNotifier) SendNotification(ctx context.Context, build *cbpb.Build)
 }
 
 func (s *slackNotifier) writeMessage(build *cbpb.Build) (*slack.WebhookMessage, error) {
-	txt := fmt.Sprintf(
-		"Cloud Build (%s, %s): %s",
-		build.ProjectId,
-		build.Id,
-		build.Status,
-	)
+	// set params in cloud build
+	subs := build.Substitutions
+
+	var branch string
+	if val, ok := subs["BRANCH_NAME"]; ok {
+		branch = val
+	}
+
+	var lastCommit string
+	if val, ok := subs["COMMIT_SHA"]; ok {
+		lastCommit = val
+	}
+
+	var triggerName string
+	if val, ok := subs["TRIGGER_NAME"]; ok {
+		triggerName = val
+	}
+
+	var envName string
+	if val, ok := subs["_ENV"]; ok {
+		envName = val
+	}
+
+	var clusterName string
+	if val, ok := subs["_CLUSTER_NAME"]; ok {
+		clusterName = val
+	}
+
+	var txtTemplate string
+	if build.Status == cbpb.Build_SUCCESS {
+		txtTemplate = fmt.Sprintf(
+			`Successfully deployed to %s environment!! 
+			 - Environment : %s
+			 - Branch : %s
+			 - Deployed Commit : %s
+			 - Cluster : %s
+			 - Trriger : %s`,
+			envName,
+			envName,
+			branch,
+			lastCommit,
+			clusterName,
+			triggerName,
+		)
+	} else {
+		txtTemplate = fmt.Sprintf(
+			`Failed deploy to %s environment 
+			 - Environment : %s
+			 - Branch : %s
+			 - Deployed Commit : %s
+			 - Cluster : %s
+			 - Trriger : %s`,
+			envName,
+			envName,
+			branch,
+			lastCommit,
+			clusterName,
+			triggerName,
+		)
+	}
 
 	var clr string
 	switch build.Status {
@@ -102,10 +156,10 @@ func (s *slackNotifier) writeMessage(build *cbpb.Build) (*slack.WebhookMessage, 
 	}
 
 	atch := slack.Attachment{
-		Text:  txt,
+		Text:  txtTemplate,
 		Color: clr,
 		Actions: []slack.AttachmentAction{{
-			Text: "View Logs",
+			Text: "Open Build Details",
 			Type: "button",
 			URL:  logURL,
 		}},
