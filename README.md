@@ -44,7 +44,7 @@ There are two the principal axis branches.
 ### Preparation
 Set `gcloud config`
 
-### Check vds-amc-client configuration is set on your local.
+### Check vds-client-amc configuration is set on your local.
 - Execute following command to check it
   ```
   % gcloud config configurations list
@@ -54,12 +54,12 @@ Set `gcloud config`
   .
   ```
 
-- If you already have the config, switch config to vds-amc-client
+- If you already have the config, switch config to vds-client-amc
   ```
   % gcloud config configurations activate ana-op
   ```
 
-- If not set vds-amc-client configuration on local, execute following command.
+- If not set vds-client-amc configuration on local, execute following command.
   ```
   % gcloud config configurations create ana-op       // create configuration
   % gcloud config set compute/region asia-northeast1 // set regison
