@@ -1,96 +1,82 @@
-# Cloud Build Notifiers
+# Cloud Build Notifiers customized for vds-amc-client
 
-This repo provides deployable notifier images and sources, as well as libraries
-for creating new notifiers.
+#### **_[Default Readme](./README-2022-10.md)_**
 
-[Cloud Build](https://cloud.google.com/cloud-build) notifiers are Docker
-containers that connect to the
-[Cloud Build Pub/Sub topic](https://cloud.google.com/cloud-build/docs/send-build-notifications)
-that adapt Pub/Sub messages about Build update notifications to other
-services/protocols, such as SMTP for email.
-Cloud Build notifiers are long-lived binaries that receive notifications throughout
-Builds' lifecycles (e.g. from the Build starting to execute through the Build finishing).
+This repository is forked from [GoogleCloudPlatform/cloud-build-notifiers](https://github.com/GoogleCloudPlatform/cloud-build-notifiers).
 
-All notifiers can be built by Cloud Build and deployed on
-[Cloud Run](https://cloud.google.com/run). The only prerequisite is to be a
-Cloud Build user and to have the
-[gcloud CLI tool](https://cloud.google.com/sdk/gcloud/) installed and configured
-for your Cloud Build project(s).
+This is used for [vds-amc-client](https://github.com/veltra/vds-amc-client) as sending slack notification after deployment by Cloud Build.
 
-There are currently 3 supported notifier types:
+## Background of why needed to fork and customize
+For following reasons, needed to make own image for Cloud Run.
 
--   [`bigquery`](./bigquery/README.md), which writes Build updates and related
-    data to a BigQuery table.
--   [`http`](./http/README.md), which sends (HTTP `POST`s) a JSON payload to
-    another HTTP endpoint.
--   [`slack`](./slack/README.md), which uses a Slack webhook to post a message
-    in a Slack channel.
--   [`smtp`](./smtp/README.md), which sends emails via an SMTP server.
+- The newest [GoogleCloudPlatform/cloud-build-notifiers](https://github.com/GoogleCloudPlatform/cloud-build-notifiers) is not enough to use for slack notification.
+- The newest slack image `us-east1-docker.pkg.dev/gcb-release/cloud-build-notifiers/slack:latest` is not recommended at this moment (2022.10.28). 
+- [Google Document](https://cloud.google.com/build/docs/configuring-notifications/configure-slack#:~:text=Notifier%20%E3%82%92%20Cloud%20Run%20%E3%81%AB%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%97%E3%81%BE%E3%81%99%E3%80%82) and [GoogleCloudPlatform/cloud-build-notifiers](https://github.com/GoogleCloudPlatform/cloud-build-notifiers/tree/master/slack#:~:text=For%20release%201.15%20and%20above%3A) recommend to use `us-east1-docker.pkg.dev/gcb-release/cloud-build-notifiers/slack:slack-1.14.0`.
+- Although they say 'use `slack:slack-1.14.0`', it is going to fail on Cloud Run deployment.
+- Needed to customize for adding notification contents (ex. branch name).
 
-**See the official documentation on Google Cloud for how to configure each notifier:**
-
-- [Configuring BigQuery notifications](https://cloud.google.com/cloud-build/docs/configuring-notifications/configure-bigquery)
-- [Configuring HTTP notifications](https://cloud.google.com/cloud-build/docs/configuring-notifications/configure-http)
-- [Configuring Slack notifications](https://cloud.google.com/cloud-build/docs/configuring-notifications/configure-slack)
-- [Configuring SMTP notifications](https://cloud.google.com/cloud-build/docs/configuring-notifications/configure-smtp)
+> Work log : https://github.com/veltra/vds-amc-client/issues/1642#issuecomment-1292845303
 
 
-## Setup Script
+## Overview of what is custamized form the newest version of [GoogleCloudPlatform/cloud-build-notifiers](https://github.com/GoogleCloudPlatform/cloud-build-notifiers)
+### Branch
+There are two the principal axis branches.
+| Branch | Usage |
+----|---- 
+| `master` | The newest source code [GoogleCloudPlatform/cloud-build-notifiers](https://github.com/GoogleCloudPlatform/cloud-build-notifiers).<br> Usually we do not update.|
+| `amc-master` | Start revision from [slack-1.14.0](https://github.com/GoogleCloudPlatform/cloud-build-notifiers/commit/ac48f4d42d36ffcb81844c521da7a112a5bdc4ed).<br> Make PR to this branch.|
 
-A [setup script](./setup.sh) exists that should automate _most_ of the notifier setup.
+### Customized slack notification contents
+- Default contents sended to slack (Before)
+    - Project ID
+    - Build ID
+    - Build Status
+- Fixed contents sended to slack (After)
+    - Environment (where to deploy)
+    - Branch (deployed branch)
+    - Deployed Commit (deployed commit)
+    - Cluster (deployed cluster)
+    - Trriger (used cloud build trigger)
 
-Run `./setup.sh --help` for usage instructions.
 
-## Common Flags
+## How to build and push slack image and deploy to Cloud Run
 
-The following are flags that belong to every notifier via inclusion of the `lib/notifiers` library.
+### Preparation
+Set `gcloud config`
 
-### `--smoketest`
+### Check vds-amc-client configuration is set on your local.
+- Execute following command to check it
+  ```
+  % gcloud config configurations list
+  NAME              IS_ACTIVE  ACCOUNT                      PROJECT          COMPUTE_DEFAULT_ZONE  COMPUTE_DEFAULT_REGION
+  ana-op            True       norihide.yoshida@veltra.com  vds-client-amc   asia-northeast1-a     asia-northeast1
+  .
+  .
+  ```
 
-This flag starts up the notifier image but only logs the notifier name (via type) and then exits.
+- If you already have the config, switch config to vds-amc-client
+  ```
+  % gcloud config configurations activate ana-op
+  ```
 
-### `--setup_check`
+- If not set vds-amc-client configuration on local, execute following command.
+  ```
+  % gcloud config configurations create ana-op  // create configuration
+  % gcloud config set compute/region asia-northeast1 // set regison
+  % gcloud config set compute/zone asia-northeast1-a
+  % gcloud config set core/account YOUR_EMAIL
+  % gcloud config set core/project vds-client-amc
+  ```
 
-This flag starts up the notifier, which does the following:
 
-1. Read the notifier configuration YAML from STDIN.
-1. Decode it into a configuration object.
-1. Attempt to call `notifier.SetUp` on the given notifier using the configuration and a faked-out `SecretGetter`.
-1. Exit successfully unless one of the previous steps failed.
 
-This can be done using the following commands:
+## Used GCP services
+- [Cloud Build > anaop-build-and-deploy](https://console.cloud.google.com/cloud-build/triggers;region=global/edit/e66f2634-c28a-4d10-9e75-162eb4bfc5d1?project=vds-client-amc)
+- [GCR > asia.gcr.io/vds-client-amc/notifier](https://console.cloud.google.com/gcr/images/vds-client-amc/asia/notifier?project=vds-client-amc)
+- [Cloud Run > slack-notifier](https://console.cloud.google.com/run/detail/asia-northeast1/slack-notifier/metrics?project=vds-client-amc)
+- [Pub/Sub > cloud-builds](https://console.cloud.google.com/cloudpubsub/topic/detail/cloud-builds?project=vds-client-amc)
+- [Cloud Storage > vds-client-amc-notifiers-config](https://console.cloud.google.com/storage/browser/vds-client-amc-notifiers-config;tab=objects?forceOnBucketsSortingFiltering=false&project=vds-client-amc&prefix=&forceOnObjectsSortingFiltering=false)
+- [Secret > deploy-slack-notification](https://console.cloud.google.com/security/secret-manager/secret/deploy-slack-notification/versions?project=vds-client-amc)
 
-```bash
-# First build the notifier locally.
-$ sudo docker build . \
-    -f=./${NOTIFIER_TYPE}/Dockerfile --tag=${NOTIFIER_TYPE}-test
-# Then run the `setup_check` with your YAML.
-# --interactive to allow reading from STDIN.
-# --rm to clean/remove the image once it exits.
-$ sudo docker run \
-    --interactive \
-    --rm \ 
-    --name=${NOTIFIER_TYPE}-test \
-    ${NOTIFIER_TYPE}-test:latest --setup_check --alsologtostderr -v=5 \
-    < path/to/my/config.yaml 
-```
 
-## License
-
-This project uses an [Apache 2.0 license](./LICENSE).
-
-## Contributing
-
-See [here](./CONTRIBUTING.md) for contributing guidelines.
-
-## Support
-
-There are several ways to get support for issues in this project:
-
--   [Cloud Build Slack channel](https://googlecloud-community.slack.com/archives/C4KCRJL4D)
--   [Cloud Build Issue Tracker](https://issuetracker.google.com/issues/new?component=190802&template=1162743)
--   [General Google Cloud support](https://cloud.google.com/cloud-build/docs/getting-support)
-
-Note: Issues filed in this repo are not guaranteed to be addressed.
-We recommend filing issues via the [Issue Tracker](https://issuetracker.google.com/issues/new?component=190802&template=1162743).
 
