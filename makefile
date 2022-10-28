@@ -1,7 +1,7 @@
 REPO_NAME=asia.gcr.io/vds-client-amc
 IMG_NAME=notifier
 IMG_TAG=latest
-BACKET_NAME=vds-client-amc-notifiers-config
+BUCKET_NAME=vds-client-amc-notifiers-config
 PROJECT_ID=vds-client-amc
 
 all: build push apply deploy
