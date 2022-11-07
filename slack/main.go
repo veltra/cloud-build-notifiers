@@ -108,46 +108,59 @@ func (s *slackNotifier) writeMessage(build *cbpb.Build) (*slack.WebhookMessage, 
 	}
 
 	var txtTemplate string
-	if build.Status == cbpb.Build_SUCCESS {
-		txtTemplate = fmt.Sprintf(
-			`Successfully deployed to %s environment!! 
-			 - Environment : %s
-			 - Branch : %s
-			 - Deployed Commit : %s
-			 - Cluster : %s
-			 - Trriger : %s`,
-			envName,
-			envName,
-			branch,
-			lastCommit,
-			clusterName,
-			triggerName,
-		)
-	} else {
-		txtTemplate = fmt.Sprintf(
-			`Failed deploy to %s environment 
-			 - Environment : %s
-			 - Branch : %s
-			 - Deployed Commit : %s
-			 - Cluster : %s
-			 - Trriger : %s`,
-			envName,
-			envName,
-			branch,
-			lastCommit,
-			clusterName,
-			triggerName,
-		)
-	}
-
 	var clr string
 	switch build.Status {
 	case cbpb.Build_SUCCESS:
 		clr = "good"
+		txtTemplate = fmt.Sprintf(
+			`Successfully deployed to %s environment!! 
+			- Environment : %s
+			- Branch : %s
+			- Deployed Commit : %s
+			- Cluster : %s
+			- Trriger : %s`,
+			envName,
+			envName,
+			branch,
+			lastCommit,
+			clusterName,
+			triggerName,
+		)
+		break
 	case cbpb.Build_FAILURE, cbpb.Build_INTERNAL_ERROR, cbpb.Build_TIMEOUT:
 		clr = "danger"
+		txtTemplate = fmt.Sprintf(
+			`Failed deploy to %s environment 
+			- Environment : %s
+			- Branch : %s
+			- Deployed Commit : %s
+			- Cluster : %s
+			- Trriger : %s`,
+			envName,
+			envName,
+			branch,
+			lastCommit,
+			clusterName,
+			triggerName,
+		)
+		break
 	default:
 		clr = "warning"
+		txtTemplate = fmt.Sprintf(
+			`Stop to deploy to %s environment
+			- Environment : %s
+			- Branch : %s
+			- Deployed Commit : %s
+			- Cluster : %s
+			- Trriger : %s`,
+			envName,
+			envName,
+			branch,
+			lastCommit,
+			clusterName,
+			triggerName,
+		)
+		break
 	}
 
 	logURL, err := notifiers.AddUTMParams(build.LogUrl, notifiers.ChatMedium)
