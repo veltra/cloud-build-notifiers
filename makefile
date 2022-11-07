@@ -16,7 +16,7 @@ push:
 
 apply:
 	@echo "Applying Configfile to Cloud Storage..."
-	@gsutil cp ./slack/slack.yaml gs://${BACKET_NAME}/slack.yaml
+	@gsutil cp ./slack/slack.yaml gs://${BUCKET_NAME}/slack.yaml
 
 deploy:
 	@echo "Deploying to Cloud Run..."
@@ -24,4 +24,4 @@ deploy:
 		--image=${REPO_NAME}/${IMG_NAME}:${IMG_TAG} \
 		--no-allow-unauthenticated \
 		--max-instances=1 \
-		--update-env-vars=CONFIG_PATH=gs://${BACKET_NAME}/slack.yaml,PROJECT_ID=${PROJECT_ID}
+		--update-env-vars=CONFIG_PATH=gs://${BUCKET_NAME}/slack.yaml,PROJECT_ID=${PROJECT_ID}

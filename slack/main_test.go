@@ -40,11 +40,11 @@ func TestWriteMessage(t *testing.T) {
 	want := &slack.WebhookMessage{
 		Attachments: []slack.Attachment{{
 			Text: `Successfully deployed to sample environment!! 
-			 - Environment : sample
-			 - Branch : test-deploy
-			 - Deployed Commit : commit-test-test
-			 - Cluster : sample-cluster
-			 - Trriger : triggername`,
+			- Environment : sample
+			- Branch : test-deploy
+			- Deployed Commit : commit-test-test
+			- Cluster : sample-cluster
+			- Trriger : triggername`,
 			Color: "good",
 			Actions: []slack.AttachmentAction{{
 				Text: "Open Build Details",
